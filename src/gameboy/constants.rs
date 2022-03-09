@@ -14,7 +14,12 @@ pub const SCREEN_BUFFER_SIZE: usize = SCREEN_WIDTH * SCREEN_HEIGHT;
 pub const SCREEN_RGBA_SLICE_SIZE: usize = SCREEN_BUFFER_SIZE * 4;
 
 pub const CLOCK_SPEED: usize = 4194304;
-pub const FRAME_RATE: usize = 60;
+// PLAYDATE: This has to be less than 60 on Playdate.
+//   The LCD's max refresh rate is 50, and it's recommended to
+//   use 30 for battery-life reasons. 30 will probably *look* fine,
+//   but we need to determine if gbrs is OK with running at a lower
+//   framerate than a real gameboy.
+pub const FRAME_RATE: usize = 30;
 pub const CYCLES_PER_FRAME: usize = CLOCK_SPEED / FRAME_RATE;
 
 // MBC_ROM_START is 0

@@ -40,16 +40,6 @@ impl Cartridge {
             title, rom_path, cart_type, rom_size, ram_size
         }
     }
-
-    pub fn playdate_bodge_noop () -> Cartridge {
-        Cartridge {
-            title: String::from("PLAYBOYTEST"),
-            rom_path: String::new(),
-            cart_type: 0,
-            rom_size: 100,
-            ram_size: 0
-        }
-    }
 }
 
 fn get_title (buffer: &Vec<u8>) -> String {

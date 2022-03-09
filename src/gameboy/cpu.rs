@@ -29,7 +29,8 @@ pub struct Cpu {
     pub cart_info: Cartridge,
     pub mem: Memory,
 
-    regs: Registers,
+    // PLAYDATE: Made public for inspecting
+    pub regs: Registers,
 
     pub gpu: Gpu,
 
@@ -882,10 +883,10 @@ impl Cpu {
     }
 
     // TODO: PLAYDATE: Maybe we should be able to play some other games
-    //   someday, this one's boring :)
-    pub fn from_hardcoded_zeroes () -> Cpu {
-        let rom = Rom::from_playdate_bodge_zeroes();
-        let cart_info = Cartridge::playdate_bodge_noop();
+    //   someday :)
+    pub fn from_hardcoded_tetris () -> Cpu {
+        let rom = Rom::from_hardcoded_tetris();
+        let cart_info = Cartridge::parse(&rom.bytes, String::from("magicland/tetris.gb"));
 
         Cpu {
             mem: Memory::from_info(cart_info.clone(), rom),

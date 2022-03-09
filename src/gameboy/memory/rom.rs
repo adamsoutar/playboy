@@ -25,9 +25,10 @@ impl Rom {
         }
     }
 
-    pub fn from_playdate_bodge_zeroes () -> Rom {
+    pub fn from_hardcoded_tetris () -> Rom {
+        let tetris_bytes = include_bytes!("./tetris.gb");
         Rom {
-            bytes: vec![0; 100]
+            bytes: tetris_bytes.to_vec()
         }
     }
 }
