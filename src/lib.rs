@@ -27,6 +27,9 @@ use gameboy::constants::{
     SCREEN_WIDTH, SCREEN_HEIGHT
 };
 
+// We'll draw "gameboy pixels" at 4 "playdate pixels" wide each
+const PIXEL_RATIO: usize = 2;
+
 struct State {
     processor: Cpu
 }
@@ -48,11 +51,6 @@ impl Game for State {
         let graphics = Graphics::get();
         graphics.clear(LCDColor::Solid(LCDSolidColor::kColorWhite))?;
 
-        // System::get().draw_fps(0, 0)?;
-        // graphics.draw_text(&format!("Running: {}", self.processor.cart_info.title)[..], point2(20,20))?;
-        // graphics.draw_text("Debug registers:", point2(20,60))?;
-        // graphics.draw_text(&format!("A: {} B: {} C: {}", self.processor.regs.a, self.processor.regs.b, self.processor.regs.c)[..], point2(20,80))?;
-
         let mut cycles = 0;
         while cycles < CYCLES_PER_FRAME {
             cycles += self.processor.step();
@@ -61,8 +59,8 @@ impl Game for State {
         // Draw screen
         // NOTE: This is not performant. We're just experimenting here.
         for i in 0..SCREEN_BUFFER_SIZE {
-            let x = i % SCREEN_WIDTH;
-            let y = i / SCREEN_WIDTH;
+            let x = (i % SCREEN_WIDTH) * PIXEL_RATIO;
+            let y = (i / SCREEN_WIDTH) * PIXEL_RATIO;
             let shade_at = &self.processor.gpu.finished_frame[i];
 
             match shade_at {
@@ -71,8 +69,8 @@ impl Game for State {
                 GreyShade::LightGrey => {},
                 _ => {
                     // Dark enough!
-                    graphics.draw_rect(
-                        ScreenRect::new(point2(x as i32, y as i32), size2(1, 1)),
+                    graphics.fill_rect(
+                        ScreenRect::new(point2(x as i32, y as i32), size2(PIXEL_RATIO as i32, PIXEL_RATIO as i32)),
                         LCDColor::Solid(LCDSolidColor::kColorBlack)
                     );
                 }
