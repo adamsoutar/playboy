@@ -23,7 +23,8 @@ pub struct Gpu {
     frame: [GreyShade; SCREEN_BUFFER_SIZE],
     // This is the frame read by the GUI,
     // it's only updated in VBlank
-    finished_frame: [GreyShade; SCREEN_BUFFER_SIZE],
+    // PLAYDATE: Made public for a hacky way of drawing the screen
+    pub finished_frame: [GreyShade; SCREEN_BUFFER_SIZE],
 
     // X and Y of background position
     scy: u8,

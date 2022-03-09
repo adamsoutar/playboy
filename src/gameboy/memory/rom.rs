@@ -9,9 +9,7 @@ pub struct Rom {
 
 impl Rom {
     pub fn read (&self, address: u16) -> u8 {
-        // TODO: PLAYDATE: This is a bodge. gbrs doesn't do this
-        if address as usize >= self.bytes.len() { 0 }
-        else { self.bytes[address as usize] }
+        self.bytes[address as usize]
     }
 
     pub fn from_file (path: &str) -> Rom {
