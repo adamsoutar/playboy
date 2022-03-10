@@ -15,7 +15,7 @@ use {
         system::System,
         Game, Playdate,
     },
-    crankstart_sys::{LCD_COLUMNS, LCD_ROWS},
+    crankstart_sys::{LCD_COLUMNS, LCD_ROWS, PDButtons},
     euclid::{point2, vec2, size2},
 };
 
@@ -50,6 +50,18 @@ impl Game for State {
     fn update(&mut self, _playdate: &mut Playdate) -> Result<(), Error> {
         let graphics = Graphics::get();
         graphics.clear(LCDColor::Solid(LCDSolidColor::kColorWhite))?;
+
+        let (btns_held, _, _) = System::get().get_button_state()?;
+
+        // TODO: Raise the joypad interrupt
+        // self.processor.mem.joypad.a_pressed = (btns_held & PDButtons::kButtonA) == PDButtons::kButtonA;
+        self.processor.mem.joypad.b_pressed = (btns_held & PDButtons::kButtonB) == PDButtons::kButtonB;
+        self.processor.mem.joypad.start_pressed = (btns_held & PDButtons::kButtonA) == PDButtons::kButtonA;
+        // self.processor.mem.joypad.select_pressed = Key::is_pressed(Key::BackSpace);
+        self.processor.mem.joypad.up_pressed = (btns_held & PDButtons::kButtonUp) == PDButtons::kButtonUp;
+        self.processor.mem.joypad.down_pressed = (btns_held & PDButtons::kButtonDown) == PDButtons::kButtonDown;
+        self.processor.mem.joypad.left_pressed = (btns_held & PDButtons::kButtonLeft) == PDButtons::kButtonLeft;
+        self.processor.mem.joypad.right_pressed = (btns_held & PDButtons::kButtonRight) == PDButtons::kButtonRight;
 
         let mut cycles = 0;
         while cycles < CYCLES_PER_FRAME {
