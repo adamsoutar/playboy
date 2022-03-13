@@ -26,7 +26,10 @@ const PIXEL_RATIO: usize = 2;
 const FRAME_RATE: usize = 30;
 
 struct State {
-    processor: Cpu
+    processor: Cpu,
+    // This is used to determine when the crank has changed direction
+    // (we use that for Start/Select)
+    last_crank_change: f32
 }
 
 impl State {
@@ -39,27 +42,44 @@ impl State {
         cpu.frame_rate = FRAME_RATE;
 
         Ok(Box::new(Self {
-            processor: cpu
+            processor: cpu,
+            last_crank_change: 0.
         }))
     }
 }
 
+// This is kind of like a differential.
+// We're looking for a "change in change" in crank angle
+fn process_crank_change (new_crank: f32, old_crank: f32) -> f32 {
+    // Is this safe with floats? (no epsilon etc.)
+    if old_crank > 0. && new_crank > 0. { 0. }
+    else if old_crank < 0. && new_crank < 0. { 0. }
+    else if new_crank == 0. { 0. }
+    else { new_crank }
+}
+
 impl Game for State {
     fn update(&mut self, _playdate: &mut Playdate) -> Result<(), Error> {
+        let system = System::get();
         let graphics = Graphics::get();
+
         graphics.clear(LCDColor::Solid(LCDSolidColor::kColorWhite))?;
 
-        let (btns_held, _, _) = System::get().get_button_state()?;
+        let crank_change = system.get_crank_change()?;
+        let processed_crank = process_crank_change(crank_change, self.last_crank_change);
+        self.last_crank_change = crank_change;
+
+        let (btns_held, _, _) = system.get_button_state()?;
 
         // TODO: Raise the joypad interrupt
-        // self.processor.mem.joypad.a_pressed = (btns_held & PDButtons::kButtonA) == PDButtons::kButtonA;
+        self.processor.mem.joypad.a_pressed = (btns_held & PDButtons::kButtonA) == PDButtons::kButtonA;
         self.processor.mem.joypad.b_pressed = (btns_held & PDButtons::kButtonB) == PDButtons::kButtonB;
-        self.processor.mem.joypad.start_pressed = (btns_held & PDButtons::kButtonA) == PDButtons::kButtonA;
-        // self.processor.mem.joypad.select_pressed = Key::is_pressed(Key::BackSpace);
         self.processor.mem.joypad.up_pressed = (btns_held & PDButtons::kButtonUp) == PDButtons::kButtonUp;
         self.processor.mem.joypad.down_pressed = (btns_held & PDButtons::kButtonDown) == PDButtons::kButtonDown;
         self.processor.mem.joypad.left_pressed = (btns_held & PDButtons::kButtonLeft) == PDButtons::kButtonLeft;
         self.processor.mem.joypad.right_pressed = (btns_held & PDButtons::kButtonRight) == PDButtons::kButtonRight;
+        self.processor.mem.joypad.start_pressed = processed_crank > 0.;
+        self.processor.mem.joypad.select_pressed = processed_crank < 0.;
 
         // Actually *run* the Gameboy game.
         self.processor.step_one_frame();
@@ -80,7 +100,7 @@ impl Game for State {
                     graphics.fill_rect(
                         ScreenRect::new(point2(x as i32, y as i32), size2(PIXEL_RATIO as i32, PIXEL_RATIO as i32)),
                         LCDColor::Solid(LCDSolidColor::kColorBlack)
-                    ).unwrap();
+                    )?;
                 }
             }
         }
