@@ -1,0 +1,6 @@
+[submodule "modules/gbrs"]
+	path = modules/gbrs
+	url = https://github.com/adamsoutar/gbrs
+[submodule "modules/crankstart"]
+	path = modules/crankstart
+	url = https://github.com/rtsuk/crankstart

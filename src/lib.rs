@@ -34,7 +34,7 @@ impl State {
         crankstart::display::Display::get().set_refresh_rate(30.0)?;
         
         let mut cpu = Cpu::from_rom_bytes(
-            include_bytes!("../../gbrs/roms/Tetris.gb").to_vec()
+            include_bytes!("../rom.gb").to_vec()
         );
         cpu.frame_rate = FRAME_RATE;
 

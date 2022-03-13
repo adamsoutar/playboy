@@ -1,7 +1,7 @@
 [package]
 name = "playboy"
 version = "0.1.0"
-edition = "2021"
+edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -19,8 +19,8 @@ lto = true
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-crankstart = { path = "../../Misc/crankstart" }
-crankstart-sys = { path = "../../Misc/crankstart/crankstart-sys" }
+crankstart = { path = "./modules/crankstart" }
+crankstart-sys = { path = "./modules/crankstart/crankstart-sys" }
 euclid = { version = "0.20.13", default-features = false, features = [ "libm" ] }
 anyhow = { version = "1.0.31", default-features = false }
-gbrs-core = { path = "../gbrs/core", default-features = false }
+gbrs-core = { path = "./modules/gbrs/core", default-features = false }
