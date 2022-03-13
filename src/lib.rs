@@ -24,6 +24,8 @@ use gbrs_core::{
 const FRAME_RATE: usize = 30;
 // This is how much we'll scale the Gameboy screen to fit it on the Playdate
 const SCALE_FACTOR: f32 = 1.6666666667;
+// Start the image at this x coordinate (centers the scaled image)
+const START_X: i32 = 67;
 
 struct State {
     processor: Cpu,
@@ -104,7 +106,7 @@ impl Game for State {
                     _ => {
                         // Light enough!
                         graphics.fill_rect(
-                            ScreenRect::new(point2(x as i32, y as i32), size2(1, 1)),
+                            ScreenRect::new(point2(START_X + x as i32, y as i32), size2(1, 1)),
                             LCDColor::Solid(LCDSolidColor::kColorWhite)
                         )?;
                     }
