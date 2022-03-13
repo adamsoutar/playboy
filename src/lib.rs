@@ -17,7 +17,8 @@ use euclid::{point2, size2, num::Floor};
 use gbrs_core::{
     cpu::Cpu,
     lcd::GreyShade,
-    constants::*
+    constants::*,
+    helpers::set_log_callback
 };
 
 // The Playdate LCD actually updates at half the rate of the Gameboy
@@ -38,6 +39,12 @@ impl State {
     pub fn new(_playdate: &Playdate) -> Result<Box<Self>, Error> {
         crankstart::display::Display::get().set_refresh_rate(30.0)?;
         
+        unsafe {
+            set_log_callback(|log_str| {
+                System::log_to_console(log_str)
+            })
+        }
+
         let mut cpu = Cpu::from_rom_bytes(
             include_bytes!("../rom.gb").to_vec()
         );
