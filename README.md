@@ -1,5 +1,4 @@
 <h1 align="center">Playboy</h1>
-<h6 align="right">Playdate Gameboy</h6>
 
 Playboy is a Nintendo Gameboy emulator for the [Panic Playdate](https://play.date)!
 
