@@ -2,33 +2,28 @@
 
 extern crate alloc;
 
-use {
-    alloc::{
-        format,
-        boxed::Box
-    },
-    anyhow::Error,
-    crankstart::{
-        crankstart_game,
-        geometry::{ScreenPoint, ScreenVector, ScreenRect},
-        graphics::{Graphics, LCDColor, LCDSolidColor},
-        system::System,
-        Game, Playdate,
-    },
-    crankstart_sys::{LCD_COLUMNS, LCD_ROWS, PDButtons},
-    euclid::{point2, vec2, size2},
+use alloc::boxed::Box;
+use anyhow::Error;
+use crankstart::{
+    crankstart_game,
+    geometry::{ScreenRect},
+    graphics::{Graphics, LCDColor, LCDSolidColor},
+    system::System,
+    Game, Playdate,
+};
+use crankstart_sys::PDButtons;
+use euclid::{point2, size2};
+
+use gbrs_core::{
+    cpu::Cpu,
+    lcd::GreyShade,
+    constants::*
 };
 
-mod gameboy;
-use gameboy::cpu::Cpu;
-use gameboy::lcd::GreyShade;
-use gameboy::constants::{
-    CYCLES_PER_FRAME, SCREEN_BUFFER_SIZE,
-    SCREEN_WIDTH, SCREEN_HEIGHT
-};
-
-// We'll draw "gameboy pixels" at 4 "playdate pixels" wide each
+// We'll draw "gameboy pixels" at N "playdate pixels" wide each
 const PIXEL_RATIO: usize = 2;
+// The Playdate LCD actually updates at half the rate of the Gameboy
+const FRAME_RATE: usize = 30;
 
 struct State {
     processor: Cpu
@@ -38,7 +33,10 @@ impl State {
     pub fn new(_playdate: &Playdate) -> Result<Box<Self>, Error> {
         crankstart::display::Display::get().set_refresh_rate(30.0)?;
         
-        let mut cpu = Cpu::from_hardcoded_tetris();
+        let mut cpu = Cpu::from_rom_bytes(
+            include_bytes!("../../gbrs/roms/Tetris.gb").to_vec()
+        );
+        cpu.frame_rate = FRAME_RATE;
 
         Ok(Box::new(Self {
             processor: cpu
@@ -63,10 +61,8 @@ impl Game for State {
         self.processor.mem.joypad.left_pressed = (btns_held & PDButtons::kButtonLeft) == PDButtons::kButtonLeft;
         self.processor.mem.joypad.right_pressed = (btns_held & PDButtons::kButtonRight) == PDButtons::kButtonRight;
 
-        let mut cycles = 0;
-        while cycles < CYCLES_PER_FRAME {
-            cycles += self.processor.step();
-        }
+        // Actually *run* the Gameboy game.
+        self.processor.step_one_frame();
 
         // Draw screen
         // NOTE: This is not performant. We're just experimenting here.
@@ -84,7 +80,7 @@ impl Game for State {
                     graphics.fill_rect(
                         ScreenRect::new(point2(x as i32, y as i32), size2(PIXEL_RATIO as i32, PIXEL_RATIO as i32)),
                         LCDColor::Solid(LCDSolidColor::kColorBlack)
-                    );
+                    ).unwrap();
                 }
             }
         }

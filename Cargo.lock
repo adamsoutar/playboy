@@ -83,6 +83,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "gbrs-core"
+version = "0.2.0"
+
+[[package]]
 name = "generic-array"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -171,6 +175,7 @@ dependencies = [
  "crankstart",
  "crankstart-sys",
  "euclid",
+ "gbrs-core",
 ]
 
 [[package]]
