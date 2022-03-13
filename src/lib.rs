@@ -60,6 +60,14 @@ fn process_crank_change (new_crank: f32, old_crank: f32) -> f32 {
     else { new_crank }
 }
 
+
+fn draw_white_pixel_at (graphics: &Graphics, x: usize, y: usize) -> Result<(), Error> {
+    graphics.fill_rect(
+        ScreenRect::new(point2(START_X + x as i32, y as i32), size2(1, 1)),
+        LCDColor::Solid(LCDSolidColor::kColorWhite)
+    )
+}
+
 impl Game for State {
     fn update(&mut self, _playdate: &mut Playdate) -> Result<(), Error> {
         let system = System::get();
@@ -100,15 +108,23 @@ impl Game for State {
                 let shade_at = &self.processor.gpu.finished_frame[gameboy_lcd_index];
 
                 match shade_at {
-                    // Not light enough to draw in 1-bit
                     GreyShade::Black => {},
-                    GreyShade::DarkGrey => {},
-                    _ => {
-                        // Light enough!
-                        graphics.fill_rect(
-                            ScreenRect::new(point2(START_X + x as i32, y as i32), size2(1, 1)),
-                            LCDColor::Solid(LCDSolidColor::kColorWhite)
-                        )?;
+                    GreyShade::DarkGrey => {
+                        // Same as below but draws every 3 pixels rather than 2
+                        if (x + y % 2) % 3 == 0 {
+                            draw_white_pixel_at(&graphics, x, y)?;
+                        }
+                    },
+                    GreyShade::LightGrey => {
+                        // This is a frame-stable cross-hatching calculation
+                        // On even Y rows, we draw pixels on every even X coord,
+                        // On odd Y rows, we draw pixels on every odd X coord
+                        if (x + y % 2) % 2 == 0 {
+                            draw_white_pixel_at(&graphics, x, y)?;
+                        }
+                    },
+                    GreyShade::White => {
+                        draw_white_pixel_at(&graphics, x, y)?;
                     }
                 }
             }
