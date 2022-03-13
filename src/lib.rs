@@ -11,8 +11,8 @@ use crankstart::{
     system::System,
     Game, Playdate,
 };
-use crankstart_sys::PDButtons;
-use euclid::{point2, size2};
+use crankstart_sys::{PDButtons, LCD_ROWS};
+use euclid::{point2, size2, num::Floor};
 
 use gbrs_core::{
     cpu::Cpu,
@@ -20,10 +20,10 @@ use gbrs_core::{
     constants::*
 };
 
-// We'll draw "gameboy pixels" at N "playdate pixels" wide each
-const PIXEL_RATIO: usize = 2;
 // The Playdate LCD actually updates at half the rate of the Gameboy
 const FRAME_RATE: usize = 30;
+// This is how much we'll scale the Gameboy screen to fit it on the Playdate
+const SCALE_FACTOR: f32 = 1.6666666667;
 
 struct State {
     processor: Cpu,
@@ -63,7 +63,7 @@ impl Game for State {
         let system = System::get();
         let graphics = Graphics::get();
 
-        graphics.clear(LCDColor::Solid(LCDSolidColor::kColorWhite))?;
+        graphics.clear(LCDColor::Solid(LCDSolidColor::kColorBlack))?;
 
         let crank_change = system.get_crank_change()?;
         let processed_crank = process_crank_change(crank_change, self.last_crank_change);
@@ -85,22 +85,29 @@ impl Game for State {
         self.processor.step_one_frame();
 
         // Draw screen
-        // NOTE: This is not performant. We're just experimenting here.
-        for i in 0..SCREEN_BUFFER_SIZE {
-            let x = (i % SCREEN_WIDTH) * PIXEL_RATIO;
-            let y = (i / SCREEN_WIDTH) * PIXEL_RATIO;
-            let shade_at = &self.processor.gpu.finished_frame[i];
+        // TODO: While drawing 1x1 rects might work in the simulator, it may
+        //   not be performant on-device.
+        let playdate_x_pixels = (SCREEN_WIDTH as f32 * SCALE_FACTOR).floor() as usize;
+        let playdate_y_pixels = LCD_ROWS as usize;
 
-            match shade_at {
-                // Not dark enough to draw in 1-bit
-                GreyShade::White => {},
-                GreyShade::LightGrey => {},
-                _ => {
-                    // Dark enough!
-                    graphics.fill_rect(
-                        ScreenRect::new(point2(x as i32, y as i32), size2(PIXEL_RATIO as i32, PIXEL_RATIO as i32)),
-                        LCDColor::Solid(LCDSolidColor::kColorBlack)
-                    )?;
+        for x in 0..playdate_x_pixels {
+            for y in 0..playdate_y_pixels {
+                let gameboy_x = (x as f32 / SCALE_FACTOR).floor() as usize;
+                let gameboy_y = (y as f32 / SCALE_FACTOR).floor() as usize;
+                let gameboy_lcd_index = gameboy_y * SCREEN_WIDTH + gameboy_x;
+                let shade_at = &self.processor.gpu.finished_frame[gameboy_lcd_index];
+
+                match shade_at {
+                    // Not light enough to draw in 1-bit
+                    GreyShade::Black => {},
+                    GreyShade::DarkGrey => {},
+                    _ => {
+                        // Light enough!
+                        graphics.fill_rect(
+                            ScreenRect::new(point2(x as i32, y as i32), size2(1, 1)),
+                            LCDColor::Solid(LCDSolidColor::kColorWhite)
+                        )?;
+                    }
                 }
             }
         }
