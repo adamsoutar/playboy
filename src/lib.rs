@@ -18,7 +18,7 @@ use gbrs_core::{
     cpu::Cpu,
     lcd::GreyShade,
     constants::*,
-    helpers::set_log_callback
+    callbacks::*
 };
 
 // The Playdate LCD actually updates at half the rate of the Gameboy
@@ -40,8 +40,8 @@ impl State {
         crankstart::display::Display::get().set_refresh_rate(30.0)?;
         
         unsafe {
-            set_log_callback(|log_str| {
-                System::log_to_console(log_str)
+            set_callbacks(Callbacks {
+                log: |log_str| System::log_to_console(log_str)
             })
         }
 
