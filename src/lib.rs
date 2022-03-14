@@ -9,13 +9,13 @@ use crankstart::{
     geometry::ScreenRect,
     graphics::{Graphics, LCDColor, LCDSolidColor},
     system::System,
-    Game, Playdate,
+    Game, Playdate
 };
 use crankstart_sys::{PDButtons, LCD_ROWS};
 use euclid::{num::Floor, point2, size2};
 
 use gbrs_core::{
-    constants::*, cpu::Cpu, helpers::set_log_callback, lcd::GreyShade,
+    constants::*, cpu::Cpu, helpers::set_log_callback, lcd::GreyShade
 };
 
 // The Playdate LCD actually updates at half the rate of the Gameboy
@@ -29,7 +29,7 @@ struct State {
     processor: Cpu,
     // This is used to determine when the crank has changed direction
     // (we use that for Start/Select)
-    last_crank_change: f32,
+    last_crank_change: f32
 }
 
 impl State {
@@ -44,7 +44,7 @@ impl State {
 
         Ok(Box::new(Self {
             processor: cpu,
-            last_crank_change: 0.,
+            last_crank_change: 0.
         }))
     }
 }
@@ -68,7 +68,7 @@ fn draw_pixel_at(
     graphics: &Graphics,
     x: usize,
     y: usize,
-    white: bool,
+    white: bool
 ) -> Result<(), Error> {
     graphics.fill_rect(
         ScreenRect::new(point2(START_X + x as i32, y as i32), size2(1, 1)),
@@ -76,7 +76,7 @@ fn draw_pixel_at(
             LCDSolidColor::kColorWhite
         } else {
             LCDSolidColor::kColorBlack
-        }),
+        })
     )
 }
 
@@ -129,19 +129,19 @@ impl Game for State {
                 match shade_at {
                     GreyShade::Black => {
                         draw_pixel_at(&graphics, x, y, false)?;
-                    }
+                    },
                     GreyShade::DarkGrey => {
                         // Same as below but draws every 3 pixels rather than 2
                         let should_be_white = (x + y % 2) % 3 == 0;
                         draw_pixel_at(&graphics, x, y, should_be_white)?;
-                    }
+                    },
                     GreyShade::LightGrey => {
                         // This is a frame-stable cross-hatching calculation
                         // On even Y rows, we draw pixels on every even X coord,
                         // On odd Y rows, we draw pixels on every odd X coord
                         let should_be_white = (x + y % 2) % 2 == 0;
                         draw_pixel_at(&graphics, x, y, should_be_white)?;
-                    }
+                    },
                     GreyShade::White => {
                         draw_pixel_at(&graphics, x, y, true)?;
                     }
