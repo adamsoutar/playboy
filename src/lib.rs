@@ -6,19 +6,16 @@ use alloc::boxed::Box;
 use anyhow::Error;
 use crankstart::{
     crankstart_game,
-    geometry::{ScreenRect},
+    geometry::ScreenRect,
     graphics::{Graphics, LCDColor, LCDSolidColor},
     system::System,
     Game, Playdate,
 };
 use crankstart_sys::{PDButtons, LCD_ROWS};
-use euclid::{point2, size2, num::Floor};
+use euclid::{num::Floor, point2, size2};
 
 use gbrs_core::{
-    cpu::Cpu,
-    lcd::GreyShade,
-    constants::*,
-    helpers::set_log_callback
+    constants::*, cpu::Cpu, helpers::set_log_callback, lcd::GreyShade,
 };
 
 // The Playdate LCD actually updates at half the rate of the Gameboy
@@ -32,46 +29,54 @@ struct State {
     processor: Cpu,
     // This is used to determine when the crank has changed direction
     // (we use that for Start/Select)
-    last_crank_change: f32
+    last_crank_change: f32,
 }
 
 impl State {
     pub fn new(_playdate: &Playdate) -> Result<Box<Self>, Error> {
         crankstart::display::Display::get().set_refresh_rate(30.0)?;
-        
-        unsafe {
-            set_log_callback(|log_str| {
-                System::log_to_console(log_str)
-            })
-        }
+        Graphics::get().clear(LCDColor::Solid(LCDSolidColor::kColorBlack))?;
 
-        let mut cpu = Cpu::from_rom_bytes(
-            include_bytes!("../rom.gb").to_vec()
-        );
+        unsafe { set_log_callback(|log_str| System::log_to_console(log_str)) }
+
+        let mut cpu = Cpu::from_rom_bytes(include_bytes!("../rom.gb").to_vec());
         cpu.frame_rate = FRAME_RATE;
 
         Ok(Box::new(Self {
             processor: cpu,
-            last_crank_change: 0.
+            last_crank_change: 0.,
         }))
     }
 }
 
 // This is kind of like a differential.
 // We're looking for a "change in change" in crank angle
-fn process_crank_change (new_crank: f32, old_crank: f32) -> f32 {
+fn process_crank_change(new_crank: f32, old_crank: f32) -> f32 {
     // Is this safe with floats? (no epsilon etc.)
-    if old_crank > 0. && new_crank > 0. { 0. }
-    else if old_crank < 0. && new_crank < 0. { 0. }
-    else if new_crank == 0. { 0. }
-    else { new_crank }
+    if old_crank > 0. && new_crank > 0. {
+        0.
+    } else if old_crank < 0. && new_crank < 0. {
+        0.
+    } else if new_crank == 0. {
+        0.
+    } else {
+        new_crank
+    }
 }
 
-
-fn draw_white_pixel_at (graphics: &Graphics, x: usize, y: usize) -> Result<(), Error> {
+fn draw_pixel_at(
+    graphics: &Graphics,
+    x: usize,
+    y: usize,
+    white: bool,
+) -> Result<(), Error> {
     graphics.fill_rect(
         ScreenRect::new(point2(START_X + x as i32, y as i32), size2(1, 1)),
-        LCDColor::Solid(LCDSolidColor::kColorWhite)
+        LCDColor::Solid(if white {
+            LCDSolidColor::kColorWhite
+        } else {
+            LCDSolidColor::kColorBlack
+        }),
     )
 }
 
@@ -80,21 +85,26 @@ impl Game for State {
         let system = System::get();
         let graphics = Graphics::get();
 
-        graphics.clear(LCDColor::Solid(LCDSolidColor::kColorBlack))?;
-
         let crank_change = system.get_crank_change()?;
-        let processed_crank = process_crank_change(crank_change, self.last_crank_change);
+        let processed_crank =
+            process_crank_change(crank_change, self.last_crank_change);
         self.last_crank_change = crank_change;
 
         let (btns_held, _, _) = system.get_button_state()?;
 
         // TODO: Raise the joypad interrupt
-        self.processor.mem.joypad.a_pressed = (btns_held & PDButtons::kButtonA) == PDButtons::kButtonA;
-        self.processor.mem.joypad.b_pressed = (btns_held & PDButtons::kButtonB) == PDButtons::kButtonB;
-        self.processor.mem.joypad.up_pressed = (btns_held & PDButtons::kButtonUp) == PDButtons::kButtonUp;
-        self.processor.mem.joypad.down_pressed = (btns_held & PDButtons::kButtonDown) == PDButtons::kButtonDown;
-        self.processor.mem.joypad.left_pressed = (btns_held & PDButtons::kButtonLeft) == PDButtons::kButtonLeft;
-        self.processor.mem.joypad.right_pressed = (btns_held & PDButtons::kButtonRight) == PDButtons::kButtonRight;
+        self.processor.mem.joypad.a_pressed =
+            (btns_held & PDButtons::kButtonA) == PDButtons::kButtonA;
+        self.processor.mem.joypad.b_pressed =
+            (btns_held & PDButtons::kButtonB) == PDButtons::kButtonB;
+        self.processor.mem.joypad.up_pressed =
+            (btns_held & PDButtons::kButtonUp) == PDButtons::kButtonUp;
+        self.processor.mem.joypad.down_pressed =
+            (btns_held & PDButtons::kButtonDown) == PDButtons::kButtonDown;
+        self.processor.mem.joypad.left_pressed =
+            (btns_held & PDButtons::kButtonLeft) == PDButtons::kButtonLeft;
+        self.processor.mem.joypad.right_pressed =
+            (btns_held & PDButtons::kButtonRight) == PDButtons::kButtonRight;
         self.processor.mem.joypad.start_pressed = processed_crank > 0.;
         self.processor.mem.joypad.select_pressed = processed_crank < 0.;
 
@@ -104,7 +114,8 @@ impl Game for State {
         // Draw screen
         // TODO: While drawing 1x1 rects might work in the simulator, it may
         //   not be performant on-device.
-        let playdate_x_pixels = (SCREEN_WIDTH as f32 * SCALE_FACTOR).floor() as usize;
+        let playdate_x_pixels =
+            (SCREEN_WIDTH as f32 * SCALE_FACTOR).floor() as usize;
         let playdate_y_pixels = LCD_ROWS as usize;
 
         for x in 0..playdate_x_pixels {
@@ -112,26 +123,27 @@ impl Game for State {
                 let gameboy_x = (x as f32 / SCALE_FACTOR).floor() as usize;
                 let gameboy_y = (y as f32 / SCALE_FACTOR).floor() as usize;
                 let gameboy_lcd_index = gameboy_y * SCREEN_WIDTH + gameboy_x;
-                let shade_at = &self.processor.gpu.finished_frame[gameboy_lcd_index];
+                let shade_at =
+                    &self.processor.gpu.finished_frame[gameboy_lcd_index];
 
                 match shade_at {
-                    GreyShade::Black => {},
+                    GreyShade::Black => {
+                        draw_pixel_at(&graphics, x, y, false)?;
+                    }
                     GreyShade::DarkGrey => {
                         // Same as below but draws every 3 pixels rather than 2
-                        if (x + y % 2) % 3 == 0 {
-                            draw_white_pixel_at(&graphics, x, y)?;
-                        }
-                    },
+                        let should_be_white = (x + y % 2) % 3 == 0;
+                        draw_pixel_at(&graphics, x, y, should_be_white)?;
+                    }
                     GreyShade::LightGrey => {
                         // This is a frame-stable cross-hatching calculation
                         // On even Y rows, we draw pixels on every even X coord,
                         // On odd Y rows, we draw pixels on every odd X coord
-                        if (x + y % 2) % 2 == 0 {
-                            draw_white_pixel_at(&graphics, x, y)?;
-                        }
-                    },
+                        let should_be_white = (x + y % 2) % 2 == 0;
+                        draw_pixel_at(&graphics, x, y, should_be_white)?;
+                    }
                     GreyShade::White => {
-                        draw_white_pixel_at(&graphics, x, y)?;
+                        draw_pixel_at(&graphics, x, y, true)?;
                     }
                 }
             }
