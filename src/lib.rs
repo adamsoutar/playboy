@@ -2,7 +2,7 @@
 
 extern crate alloc;
 
-use alloc::boxed::Box;
+use alloc::{boxed::Box, vec};
 use anyhow::Error;
 use crankstart::{
     crankstart_game,
@@ -37,7 +37,12 @@ impl State {
 
         unsafe {
             set_callbacks(Callbacks {
-                log: |log_str| System::log_to_console(log_str)
+                log: |log_str| System::log_to_console(log_str),
+                save: |_game_name, _rom_path, _save_data| (), // TODO
+                load: |_game_name, _rom_path, expected_size| {
+                    vec![0; expected_size]
+                }, // TODO
+                get_ms_timestamp: || 0 // TODO
             })
         }
 
