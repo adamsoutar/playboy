@@ -2,16 +2,16 @@
 
 extern crate alloc;
 
-use alloc::{boxed::Box, vec};
+use alloc::{boxed::Box, vec, format};
 use anyhow::Error;
 use crankstart::{
-    crankstart_game,
+    crankstart_game, file::FileSystem,
     geometry::ScreenRect,
     graphics::{Graphics, LCDColor, LCDSolidColor},
     system::System,
     Game, Playdate
 };
-use crankstart_sys::{PDButtons, LCD_ROWS};
+use crankstart_sys::{FileOptions, PDButtons, LCD_ROWS};
 use euclid::{num::Floor, point2, size2};
 
 use gbrs_core::{callbacks::*, constants::*, cpu::Cpu, lcd::GreyShade};
@@ -38,11 +38,47 @@ impl State {
         unsafe {
             set_callbacks(Callbacks {
                 log: |log_str| System::log_to_console(log_str),
-                save: |_game_name, _rom_path, _save_data| (), // TODO
-                load: |_game_name, _rom_path, expected_size| {
-                    vec![0; expected_size]
-                }, // TODO
-                get_ms_timestamp: || 0 // TODO
+                save: |game_name, _rom_path, save_data| {
+                    let file_system = FileSystem::get();
+                    let save_path = &format!("{}.sav", game_name)[..];
+                    let save_file = file_system
+                        .open(
+                            save_path,
+                            FileOptions::kFileWrite
+                        ).unwrap();
+                    save_file.write(&save_data[..]).unwrap();
+                },
+                load: |game_name, _rom_path, expected_size| {
+                    let file_system = FileSystem::get();
+                    let save_path = &format!("{}.sav", game_name)[..];
+
+                    let stat_result = file_system.stat(save_path);
+
+                    if let Ok(stat) = stat_result {
+                        // There is a save file and we can read it!
+                        // NOTE: stat.size might not be the expected_size, but
+                        //   that error-case is already handled in gbrs' ram.rs
+                        let mut buffer = vec![0; stat.size as usize];
+                        let save_file = file_system
+                            .open(
+                                save_path,
+                                FileOptions::kFileRead | FileOptions::kFileReadData
+                            ).unwrap();
+                        save_file.read(&mut buffer).unwrap();
+                        System::log_to_console(&format!("Loaded {}", save_path)[..]);
+                        buffer
+                    } else {
+                        // Error at that path, there probably just isn't a save
+                        //   file yet. Return all 0s
+                        // TODO: Should this be all 0 or all 0xFF?
+                        System::log_to_console(&format!("{} not found", save_path)[..]);
+                        vec![0; expected_size]
+                    }
+                },
+                get_ms_timestamp: || {
+                    let system = System::get();
+                    system.get_current_time_milliseconds().unwrap()
+                }
             })
         }
 
