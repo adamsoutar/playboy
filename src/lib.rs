@@ -32,7 +32,7 @@ struct State {
 
 impl State {
     pub fn new(_playdate: &Playdate) -> Result<Box<Self>, Error> {
-        crankstart::display::Display::get().set_refresh_rate(30.0)?;
+        crankstart::display::Display::get().set_refresh_rate(FRAME_RATE as f32)?;
         Graphics::get().clear(LCDColor::Solid(LCDSolidColor::kColorBlack))?;
 
         unsafe {
