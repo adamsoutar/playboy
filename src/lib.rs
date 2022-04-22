@@ -102,6 +102,16 @@ impl State {
             }))
         } else {
             System::log_to_console("Couldn't find rom.gb in Playboy's data folder, please provide one.");
+
+            // Let's write a handy little helper file to point new folk in the
+            // right direction.
+            let help_file = file_system
+                .open(
+                    "Game ROM goes here",
+                    FileOptions::kFileWrite
+                ).unwrap();
+            help_file.write(&[]).unwrap();
+
             Ok(Box::new(Self {
                 processor: None,
                 last_crank_change: 0.
