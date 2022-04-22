@@ -10,46 +10,12 @@ Playboy is a Nintendo Gameboy emulator for the [Panic Playdate](https://play.dat
   </tr>
 </table>
 
-## Building
+## Bring your own games
 
-Playdate isn't exactly a Tier 1 platform for Rust :)
+The first time you start Playboy, you'll see "**_No game ROM found_**".
 
-As a result, the build is a _little_ bit trickier than usual, but you can install
-Playboy by following these steps.
-
-### Prerequisites
-
-You'll need
-
-- The [Playdate SDK](https://play.date/dev/)
-- [Rustup](https://rustup.rs)
-- Nightly Rust (run`rustup default nightly`)
-- [Crank](https://github.com/rtsuk/crank), the actual tool for compiling Rust for Playdate
-
-### Running
-
-```bash
-git clone https://github.com/adamsoutar/playboy
-cd playboy
-git submodule init
-git submodule update
-```
-
-> Next, you'll need to place a Gameboy game in the `playboy` folder as `rom.gb`.
-> The Playboy repo doesn't contain any copyrighted Nintendo software or any built-in ROMs.
-
-```bash
-cp ~/MyPersonalRomCollection/Tetris.gb ./rom.gb
-```
-
-> Now we can finally build & run the code:
-
-```bash
-crank run --release
-```
-
-This will launch the Playdate Simulator and boot right in to your favourite
-Gameboy game!
+See [these steps](./docs/adding-roms.md) for downloading/playing whichever games
+you want.
 
 ## Controls
 
