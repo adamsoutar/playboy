@@ -17,6 +17,16 @@ The first time you start Playboy, you'll see "**_No game ROM found_**".
 See [these steps](./docs/adding-roms.md) for downloading/playing whichever games
 you want.
 
+## Help! I can't run Playboy on macOS
+
+If you see "pdex.dylib cannot be opened" when you try to run the emulator,
+
+- Right-click on `Playboy.pdx` in the Finder and click "Show Package Contents"
+- Right-click on the `pdex.dylib` file and click "Open"
+- Press "Open" in the dialog that pops up
+
+Now you'll be able to run the `.pdx` :)
+
 ## Controls
 
 **Left**, **Right**, **Up**, **Down**, **A** and **B** are exactly what you'd
