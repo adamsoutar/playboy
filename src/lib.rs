@@ -24,7 +24,7 @@ const SCALE_FACTOR: f32 = 1.6666666667;
 const START_X: i32 = 67;
 
 struct State {
-    processor: Cpu,
+    processor: Option<Cpu>,
     // This is used to determine when the crank has changed direction
     // (we use that for Start/Select)
     last_crank_change: f32
@@ -97,13 +97,15 @@ impl State {
             cpu.frame_rate = FRAME_RATE;
     
             Ok(Box::new(Self {
-                processor: cpu,
+                processor: Some(cpu),
                 last_crank_change: 0.
             }))
         } else {
-            // TODO: Communicate this in UI. Most users will probably hit this
-            // first time.
-            panic!("No game rom");
+            System::log_to_console("Couldn't find rom.gb in Playboy's data folder, please provide one.");
+            Ok(Box::new(Self {
+                processor: None,
+                last_crank_change: 0.
+            }))
         }
     }
 }
@@ -140,9 +142,14 @@ fn draw_pixel_at(
 }
 
 impl Game for State {
-    fn update(&mut self, _playdate: &mut Playdate) -> Result<(), Error> {
+    fn update(&mut self, playdate: &mut Playdate) -> Result<(), Error> {
+        if self.processor.is_none() {
+            return self.no_rom_update(playdate)
+        }
+
         let system = System::get();
         let graphics = Graphics::get();
+        let gameboy = self.processor.as_mut().unwrap();
 
         let crank_change = system.get_crank_change()?;
         let processed_crank =
@@ -152,23 +159,23 @@ impl Game for State {
         let (btns_held, _, _) = system.get_button_state()?;
 
         // TODO: Raise the joypad interrupt
-        self.processor.mem.joypad.a_pressed =
+        gameboy.mem.joypad.a_pressed =
             (btns_held & PDButtons::kButtonA) == PDButtons::kButtonA;
-        self.processor.mem.joypad.b_pressed =
+        gameboy.mem.joypad.b_pressed =
             (btns_held & PDButtons::kButtonB) == PDButtons::kButtonB;
-        self.processor.mem.joypad.up_pressed =
+        gameboy.mem.joypad.up_pressed =
             (btns_held & PDButtons::kButtonUp) == PDButtons::kButtonUp;
-        self.processor.mem.joypad.down_pressed =
+        gameboy.mem.joypad.down_pressed =
             (btns_held & PDButtons::kButtonDown) == PDButtons::kButtonDown;
-        self.processor.mem.joypad.left_pressed =
+        gameboy.mem.joypad.left_pressed =
             (btns_held & PDButtons::kButtonLeft) == PDButtons::kButtonLeft;
-        self.processor.mem.joypad.right_pressed =
+        gameboy.mem.joypad.right_pressed =
             (btns_held & PDButtons::kButtonRight) == PDButtons::kButtonRight;
-        self.processor.mem.joypad.start_pressed = processed_crank > 0.;
-        self.processor.mem.joypad.select_pressed = processed_crank < 0.;
+        gameboy.mem.joypad.start_pressed = processed_crank > 0.;
+        gameboy.mem.joypad.select_pressed = processed_crank < 0.;
 
         // Actually *run* the Gameboy game.
-        self.processor.step_one_frame();
+        gameboy.step_one_frame();
 
         // Draw screen
         // TODO: While drawing 1x1 rects might work in the simulator, it may
@@ -183,7 +190,7 @@ impl Game for State {
                 let gameboy_y = (y as f32 / SCALE_FACTOR).floor() as usize;
                 let gameboy_lcd_index = gameboy_y * SCREEN_WIDTH + gameboy_x;
                 let shade_at =
-                    &self.processor.gpu.finished_frame[gameboy_lcd_index];
+                    &gameboy.gpu.finished_frame[gameboy_lcd_index];
 
                 match shade_at {
                     GreyShade::Black => {
@@ -207,6 +214,25 @@ impl Game for State {
                 }
             }
         }
+
+        Ok(())
+    }
+}
+
+impl State {
+    fn no_rom_update(&mut self, _playdate: &mut Playdate) -> Result<(), Error> {
+        // The game loop we enter if the user hasn't provided a ROM
+        let graphics = Graphics::get();
+
+        graphics.clear(LCDColor::Solid(LCDSolidColor::kColorWhite))?;
+        graphics.draw_text("No game ROM found.
+
+Please copy a \"rom.gb\" file into
+Playboy's data folder.
+
+See:
+https://github.com/adamsoutar/playboy
+For more detailed steps :)", point2(20, 20))?;
 
         Ok(())
     }
