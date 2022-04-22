@@ -1,4 +1,5 @@
-<h1 align="center">Playboy</h1>
+![Playboy logo](./assets/Logo-GitHub-Grey.svg#gh-dark-mode-only)
+![Playboy logo](./assets/Logo-Black.svg#gh-light-mode-only)
 
 Playboy is a Nintendo Gameboy emulator for the [Panic Playdate](https://play.date)!
 

@@ -1,3 +1,4 @@
 /target
 # Copyrighted ROMs
 *.gb
+.DS_Store
