@@ -1,3 +1,17 @@
 [[target]]
     name = "playboy"
-    assets = []
+    assets = [
+        "./assets/launcher/card.png", 
+        "./assets/launcher/card-highlighted/1.png",
+        "./assets/launcher/card-highlighted/2.png",
+        "./assets/launcher/card-highlighted/animation.txt",
+        "./assets/launcher/launchImage.png"
+    ]
+
+    [target.metadata]
+        name = "Playboy"
+        author = "Adam Soutar"
+        description = "A Nintendo Gameboy emulator for Playdate!"
+        bundle_id = "me.overflo.playboy"
+        version = "0.1"
+        image_path = "assets/launcher"
