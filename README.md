@@ -21,7 +21,7 @@ Playboy by following these steps.
 
 You'll need
 
-- The [Playdate SDK](https://play.date/dev/) (last tested with v1.9.1)
+- The [Playdate SDK](https://play.date/dev/)
 - [Rustup](https://rustup.rs)
 - Nightly Rust (run`rustup default nightly`)
 - [Crank](https://github.com/rtsuk/crank), the actual tool for compiling Rust for Playdate
