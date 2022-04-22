@@ -10,6 +10,10 @@ Playboy is a Nintendo Gameboy emulator for the [Panic Playdate](https://play.dat
   </tr>
 </table>
 
+## Download the emulator
+
+You can grab a `.pdx` file to run from [the Releases page](https://github.com/adamsoutar/playboy/releases/).
+
 ## Bring your own games
 
 The first time you start Playboy, you'll see "**_No game ROM found_**".
