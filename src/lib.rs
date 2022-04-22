@@ -74,10 +74,6 @@ impl State {
                         System::log_to_console(&format!("{} not found", save_path)[..]);
                         vec![0; expected_size]
                     }
-                },
-                get_ms_timestamp: || {
-                    let system = System::get();
-                    system.get_current_time_milliseconds().unwrap()
                 }
             })
         }
