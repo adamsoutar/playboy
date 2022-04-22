@@ -78,13 +78,33 @@ impl State {
             })
         }
 
-        let mut cpu = Cpu::from_rom_bytes(include_bytes!("../rom.gb").to_vec());
-        cpu.frame_rate = FRAME_RATE;
+        // Read game ROM from the Playdate's data folder
+        // This allows the user to provide their own roms without copyright
+        // issues.
+        let file_system = FileSystem::get();
+        let rom_stat_result = file_system.stat("rom.gb");
+        if let Ok(rom_stat) = rom_stat_result {
+            let mut rom_buffer = vec![0; rom_stat.size as usize];
 
-        Ok(Box::new(Self {
-            processor: cpu,
-            last_crank_change: 0.
-        }))
+            let rom_file = file_system
+                .open(
+                    "rom.gb",
+                    FileOptions::kFileRead | FileOptions::kFileReadData
+                ).unwrap();
+            rom_file.read(&mut rom_buffer).unwrap();
+
+            let mut cpu = Cpu::from_rom_bytes(rom_buffer);
+            cpu.frame_rate = FRAME_RATE;
+    
+            Ok(Box::new(Self {
+                processor: cpu,
+                last_crank_change: 0.
+            }))
+        } else {
+            // TODO: Communicate this in UI. Most users will probably hit this
+            // first time.
+            panic!("No game rom");
+        }
     }
 }
 
