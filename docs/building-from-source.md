@@ -28,13 +28,6 @@ git submodule init
 git submodule update
 ```
 
-> Next, you'll need to place a Gameboy game in the `playboy` folder as `rom.gb`.
-> The Playboy repo doesn't contain any copyrighted Nintendo software or any built-in ROMs.
-
-```bash
-cp ~/MyPersonalRomCollection/Tetris.gb ./rom.gb
-```
-
 > Now we can finally build & run the code:
 
 ```bash
