@@ -19,8 +19,6 @@ use gbrs_core::{callbacks::*, constants::*, cpu::Cpu, lcd::GreyShade};
 const FRAME_RATE: usize = 30;
 // This is how much we'll scale the Gameboy screen to fit it on the Playdate
 const SCALE_FACTOR: f32 = 1.6666666667;
-// Start the image at this x coordinate (centers the scaled image)
-const START_X: usize = 67;
 
 struct State {
     processor: Option<Cpu>,
@@ -134,29 +132,6 @@ fn process_crank_change(new_crank: f32, old_crank: f32) -> f32 {
     }
 }
 
-fn draw_pixel_at(
-    framebuffer: &mut [u8],
-    raw_x: usize,
-    y: usize,
-    white: bool
-) {
-    // Center the screen
-    let x = raw_x + START_X;
-
-    // Do bit-level maths to update the framebuffer.
-    // This might be better to do a byte at a time (see below comments in update)
-    let byte_index = y * 52 + x / 8;
-    let bit_index = 7 - (x - (x / 8) * 8);
-    let mask: u8 = !(1 << bit_index);
-    let desired_bit = if white { 1 } else { 0 };
-
-    let mut frame_byte = framebuffer[byte_index];
-    frame_byte &= mask;
-    frame_byte |= desired_bit << bit_index;
-
-    framebuffer[byte_index] = frame_byte;
-}
-
 impl Game for State {
     fn update(&mut self, playdate: &mut Playdate) -> Result<(), Error> {
         if self.processor.is_none() {
@@ -201,11 +176,10 @@ impl Game for State {
         // I've got a speculation that writing in X rows is better because
         // that's how the framebuffer is written out in memory, but I'm not
         // sure.
-        // TODO: Work on one u8 in a register before writing to the framebuffer,
-        //   instead of writing to the frame buffer 8 times per byte.
-        let framebuffer_ptr = graphics.get_frame()?;
+        let framebuffer = graphics.get_frame()?;
 
         for y in 0..playdate_y_pixels {
+            let mut screen_byte: u8 = 0x00;
             for x in 0..playdate_x_pixels {
                 let gameboy_x = (x as f32 / SCALE_FACTOR).floor() as usize;
                 let gameboy_y = (y as f32 / SCALE_FACTOR).floor() as usize;
@@ -213,25 +187,42 @@ impl Game for State {
                 let shade_at =
                     &gameboy.gpu.finished_frame[gameboy_lcd_index];
 
+                let bit_index = 7 - (x % 8);
+
                 match shade_at {
                     GreyShade::Black => {
-                        draw_pixel_at(framebuffer_ptr, x, y, false);
+                        // The screen_byte is already black by default
                     },
                     GreyShade::DarkGrey => {
                         // Same as below but draws every 3 pixels rather than 2
                         let should_be_white = (x + y % 2) % 3 == 0;
-                        draw_pixel_at(framebuffer_ptr, x, y, should_be_white);
+                        if should_be_white {
+                            screen_byte |= 1 << bit_index;
+                        }
                     },
                     GreyShade::LightGrey => {
                         // This is a frame-stable cross-hatching calculation
                         // On even Y rows, we draw pixels on every even X coord,
                         // On odd Y rows, we draw pixels on every odd X coord
                         let should_be_white = (x + y % 2) % 2 == 0;
-                        draw_pixel_at(framebuffer_ptr, x, y, should_be_white);
+                        if should_be_white {
+                            screen_byte |= 1 << bit_index;
+                        }
                     },
                     GreyShade::White => {
-                        draw_pixel_at(framebuffer_ptr, x, y, true);
+                        screen_byte |= 1 << bit_index;
                     }
+                }
+
+                if (x + 1) % 8 == 0 {
+                    // We've drawn a row of 8 pixels, let's commit it to the
+                    // frame buffer.
+                    // x + 64 is to horizontally center(-ish) the screen.
+                    // 67 is the actual constant, but keeping it divisible by
+                    // 8 lets us do faster framebuffer maths.
+                    let byte_index = y * 52 + (x + 64) / 8;
+                    framebuffer[byte_index] = screen_byte;
+                    screen_byte = 0x00;
                 }
             }
         }
@@ -239,6 +230,9 @@ impl Game for State {
         // NOTE: This redraws the entire scren. Here we lose our little
         //   optimisation we had before where we wouldn't redraw the borders
         //   around the gameboy screen.
+        // TODO: Would it be quicker to check if screen_byte is going to be the
+        //   same as it was last frame, and then try and skip some updated
+        //   rows?
         graphics.mark_updated_rows(0..=(LCD_ROWS - 1) as i32)?;
 
         Ok(())
