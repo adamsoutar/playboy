@@ -6,13 +6,12 @@ use alloc::{boxed::Box, vec, format};
 use anyhow::Error;
 use crankstart::{
     crankstart_game, file::FileSystem,
-    geometry::ScreenRect,
     graphics::{Graphics, LCDColor, LCDSolidColor},
     system::System,
     Game, Playdate
 };
 use crankstart_sys::{FileOptions, PDButtons, LCD_ROWS};
-use euclid::{num::Floor, point2, size2};
+use euclid::{num::Floor, point2};
 
 use gbrs_core::{callbacks::*, constants::*, cpu::Cpu, lcd::GreyShade};
 
@@ -21,7 +20,7 @@ const FRAME_RATE: usize = 30;
 // This is how much we'll scale the Gameboy screen to fit it on the Playdate
 const SCALE_FACTOR: f32 = 1.6666666667;
 // Start the image at this x coordinate (centers the scaled image)
-const START_X: i32 = 67;
+const START_X: usize = 67;
 
 struct State {
     processor: Option<Cpu>,
@@ -136,19 +135,26 @@ fn process_crank_change(new_crank: f32, old_crank: f32) -> f32 {
 }
 
 fn draw_pixel_at(
-    graphics: &Graphics,
-    x: usize,
+    framebuffer: &mut [u8],
+    raw_x: usize,
     y: usize,
     white: bool
-) -> Result<(), Error> {
-    graphics.fill_rect(
-        ScreenRect::new(point2(START_X + x as i32, y as i32), size2(1, 1)),
-        LCDColor::Solid(if white {
-            LCDSolidColor::kColorWhite
-        } else {
-            LCDSolidColor::kColorBlack
-        })
-    )
+) {
+    // Center the screen
+    let x = raw_x + START_X;
+
+    // Do bit-level maths to update the framebuffer.
+    // This might be better to do a byte at a time (see below comments in update)
+    let byte_index = y * 52 + x / 8;
+    let bit_index = 7 - (x - (x / 8) * 8);
+    let mask: u8 = !(1 << bit_index);
+    let desired_bit = if white { 1 } else { 0 };
+
+    let mut frame_byte = framebuffer[byte_index];
+    frame_byte &= mask;
+    frame_byte |= desired_bit << bit_index;
+
+    framebuffer[byte_index] = frame_byte;
 }
 
 impl Game for State {
@@ -188,14 +194,19 @@ impl Game for State {
         gameboy.step_one_frame();
 
         // Draw screen
-        // TODO: While drawing 1x1 rects might work in the simulator, it may
-        //   not be performant on-device.
         let playdate_x_pixels =
             (SCREEN_WIDTH as f32 * SCALE_FACTOR).floor() as usize;
         let playdate_y_pixels = LCD_ROWS as usize;
 
-        for x in 0..playdate_x_pixels {
-            for y in 0..playdate_y_pixels {
+        // I've got a speculation that writing in X rows is better because
+        // that's how the framebuffer is written out in memory, but I'm not
+        // sure.
+        // TODO: Work on one u8 in a register before writing to the framebuffer,
+        //   instead of writing to the frame buffer 8 times per byte.
+        let framebuffer_ptr = graphics.get_frame()?;
+
+        for y in 0..playdate_y_pixels {
+            for x in 0..playdate_x_pixels {
                 let gameboy_x = (x as f32 / SCALE_FACTOR).floor() as usize;
                 let gameboy_y = (y as f32 / SCALE_FACTOR).floor() as usize;
                 let gameboy_lcd_index = gameboy_y * SCREEN_WIDTH + gameboy_x;
@@ -204,26 +215,31 @@ impl Game for State {
 
                 match shade_at {
                     GreyShade::Black => {
-                        draw_pixel_at(&graphics, x, y, false)?;
+                        draw_pixel_at(framebuffer_ptr, x, y, false);
                     },
                     GreyShade::DarkGrey => {
                         // Same as below but draws every 3 pixels rather than 2
                         let should_be_white = (x + y % 2) % 3 == 0;
-                        draw_pixel_at(&graphics, x, y, should_be_white)?;
+                        draw_pixel_at(framebuffer_ptr, x, y, should_be_white);
                     },
                     GreyShade::LightGrey => {
                         // This is a frame-stable cross-hatching calculation
                         // On even Y rows, we draw pixels on every even X coord,
                         // On odd Y rows, we draw pixels on every odd X coord
                         let should_be_white = (x + y % 2) % 2 == 0;
-                        draw_pixel_at(&graphics, x, y, should_be_white)?;
+                        draw_pixel_at(framebuffer_ptr, x, y, should_be_white);
                     },
                     GreyShade::White => {
-                        draw_pixel_at(&graphics, x, y, true)?;
+                        draw_pixel_at(framebuffer_ptr, x, y, true);
                     }
                 }
             }
         }
+
+        // NOTE: This redraws the entire scren. Here we lose our little
+        //   optimisation we had before where we wouldn't redraw the borders
+        //   around the gameboy screen.
+        graphics.mark_updated_rows(0..=(LCD_ROWS - 1) as i32)?;
 
         Ok(())
     }
