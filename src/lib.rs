@@ -15,8 +15,16 @@ use euclid::{num::Floor, point2};
 
 use gbrs_core::{callbacks::*, constants::*, cpu::Cpu, lcd::GreyShade};
 
-// The Playdate LCD actually updates at half the rate of the Gameboy
+// On hardware, we'll target 15 FPS, which is more achievable, and still
+// playable.
+// On the simulator, we should have more than enough power to push 30 FPS.
+// Hopefully this can be universally set to 30 one day when everything is fast
+// enough.
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 const FRAME_RATE: usize = 30;
+#[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+const FRAME_RATE: usize = 15;
+
 // This is how much we'll scale the Gameboy screen to fit it on the Playdate
 const SCALE_FACTOR: f32 = 1.6666666667;
 
