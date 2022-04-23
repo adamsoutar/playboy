@@ -13,5 +13,5 @@
         author = "Adam Soutar"
         description = "A Nintendo Gameboy emulator for Playdate!"
         bundle_id = "me.overflo.playboy"
-        version = "0.2"
+        version = "0.3"
         image_path = "assets/launcher"
