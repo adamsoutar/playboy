@@ -1,14 +1,13 @@
-use alloc::{boxed::Box, vec::Vec, vec, string::String, format};
+use alloc::{vec::Vec, vec, string::String, format};
 use anyhow::Error;
 use crankstart::{
-    crankstart_game, file::FileSystem,
-    graphics::{Graphics, LCDColor, LCDSolidColor, Font},
+    file::FileSystem,
+    graphics::{Graphics, LCDColor, LCDSolidColor},
     system::System,
-    Game, Playdate, log_to_console,
+    Playdate
 };
-use crankstart_sys::{FileOptions, PDButtons, LCD_ROWS, LCDBitmapDrawMode};
-use euclid::{num::Floor, point2, rect};
-use gbrs_core::cpu::Cpu;
+use crankstart_sys::{FileOptions, PDButtons, LCDBitmapDrawMode};
+use euclid::{point2, rect};
 
 const X_PADDING: i32 = 20;
 const Y_PADDING: i32 = 7;

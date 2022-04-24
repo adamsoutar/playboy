@@ -2,6 +2,8 @@
 
 extern crate alloc;
 
+use core::ffi::c_void;
+
 use alloc::{boxed::Box, vec, format};
 use anyhow::Error;
 use crankstart::{
@@ -30,6 +32,11 @@ const FRAME_RATE: usize = 15;
 
 // This is how much we'll scale the Gameboy screen to fit it on the Playdate
 const SCALE_FACTOR: f32 = 1.6666666667;
+
+// This is nasty and not very Rust-like, but it's about the best I can manage
+// given that I need to mutate state via an extern C fn.
+// TODO: Do this a different way
+static mut WANT_TO_QUIT_GAME: bool = false;
 
 struct State {
     processor: Option<Cpu>,
@@ -96,6 +103,15 @@ impl State {
             ).unwrap();
         help_file.write(&[]).unwrap();
 
+        // Provide a menu item for going back to the rom picker
+        // Allowing you to quit a game without quitting Playboy
+        let system = System::get();
+
+        unsafe extern "C" fn quit_game_callback (_: *mut c_void) {
+            WANT_TO_QUIT_GAME = true;
+        }
+        system.add_menu_item("quit game", Some(quit_game_callback))?;
+
         Ok(Box::new(Self {
             processor: None,
             last_crank_change: 0.,
@@ -123,6 +139,14 @@ impl Game for State {
     fn update(&mut self, playdate: &mut Playdate) -> Result<(), Error> {
         let system = System::get();
         let graphics = Graphics::get();
+
+        unsafe {
+            if WANT_TO_QUIT_GAME {
+                WANT_TO_QUIT_GAME = false;
+                self.rom_picker = Some(RomPickerState::new());
+                self.processor = None;
+            }
+        }
 
         if let Some(rom_picker) = &mut self.rom_picker {
             let maybe_picked_game = rom_picker.update(playdate)?;
