@@ -1,28 +1,21 @@
-# Providing a game ROM
+# Adding games to Playboy
 
 To play Gameboy games on your Playdate, you'll need.. Gameboy games 😄
 
 Playboy doesn't come with any, so you will need to find your own copy of
 whatever you'd like to play. They usually come in `.gb` files (eg. `TETRIS.gb`) - the way you acquire them is up to you.
 
-## Copy the game to the Data folder
+## First thing's first
 
-In Playdate Simulator, select the "Reveal Data folder" option like so:
+**Are you using a real Playdate or the Simulator?**
 
-![Reveal Data menu option](../assets/data-folder.jpg)
-
-Now, double click on `Data`, then `me.overflo.playboy`.
-
-> If you don't see a folder named `me.overflo.playboy` in `Data`, run Playboy at least once to create it, or just create the folder yourself
-
-Paste your game into this folder and make sure the file is named `rom.gb`.
-
-## Switching games
-
-Any time you like, you can swap out the rom file for a different game (eg.
-to switch between Tetris and Super Mario Land), just re-open Playboy and it'll
-boot into the new game.
-
----
-
-###### Enjoy!
+<table>
+<tr>
+<td>
+<a href="./adding-roms-on-hardware.md">I've got a real Playdate</a>
+</td>
+<td>
+<a href="./adding-roms-on-hardware.md">I'm using the Simulator</a>
+</td>
+</tr>
+</table>
