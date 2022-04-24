@@ -42,7 +42,6 @@ struct State {
 impl State {
     pub fn new(_playdate: &Playdate) -> Result<Box<Self>, Error> {
         crankstart::display::Display::get().set_refresh_rate(FRAME_RATE as f32)?;
-        Graphics::get().clear(LCDColor::Solid(LCDSolidColor::kColorBlack))?;
 
         unsafe {
             set_callbacks(Callbacks {
@@ -87,47 +86,21 @@ impl State {
             })
         }
 
-        // Read game ROM from the Playdate's data folder
-        // This allows the user to provide their own roms without copyright
-        // issues.
+        // Let's write a handy little helper file to point new folk in the
+        // right direction.
         let file_system = FileSystem::get();
-        // let rom_stat_result = file_system.stat("rom.gb");
-        // if let Ok(rom_stat) = rom_stat_result {
-        //     let mut rom_buffer = vec![0; rom_stat.size as usize];
+        let help_file = file_system
+            .open(
+                "Game ROMs go here",
+                FileOptions::kFileWrite
+            ).unwrap();
+        help_file.write(&[]).unwrap();
 
-        //     let rom_file = file_system
-        //         .open(
-        //             "rom.gb",
-        //             FileOptions::kFileRead | FileOptions::kFileReadData
-        //         ).unwrap();
-        //     rom_file.read(&mut rom_buffer).unwrap();
-
-        //     let mut cpu = Cpu::from_rom_bytes(rom_buffer);
-        //     cpu.frame_rate = FRAME_RATE;
-    
-        //     Ok(Box::new(Self {
-        //         processor: Some(cpu),
-        //         last_crank_change: 0.,
-        //         rom_picker: None
-        //     }))
-        // } else {
-            log_to_console!("Couldn't find any roms in Playboy's data folder, please provide one.");
-
-            // Let's write a handy little helper file to point new folk in the
-            // right direction.
-            let help_file = file_system
-                .open(
-                    "Game ROMs go here",
-                    FileOptions::kFileWrite
-                ).unwrap();
-            help_file.write(&[]).unwrap();
-
-            Ok(Box::new(Self {
-                processor: None,
-                last_crank_change: 0.,
-                rom_picker: Some(RomPickerState::new())
-            }))
-        // }
+        Ok(Box::new(Self {
+            processor: None,
+            last_crank_change: 0.,
+            rom_picker: Some(RomPickerState::new())
+        }))
     }
 }
 
