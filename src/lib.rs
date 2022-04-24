@@ -260,23 +260,4 @@ impl Game for State {
     }
 }
 
-impl State {
-    fn no_rom_update(&mut self, _playdate: &mut Playdate) -> Result<(), Error> {
-        // The game loop we enter if the user hasn't provided a ROM
-        let graphics = Graphics::get();
-
-        graphics.clear(LCDColor::Solid(LCDSolidColor::kColorWhite))?;
-        graphics.draw_text("No game ROM found.
-
-Please copy a \"rom.gb\" file into
-Playboy's data folder.
-
-See:
-https://github.com/adamsoutar/playboy
-For more detailed steps :)", point2(20, 20))?;
-
-        Ok(())
-    }
-}
-
 crankstart_game!(State);

@@ -84,10 +84,14 @@ impl RomPickerState {
   }
 
   fn draw_whole_game_list (&self) -> Result<(), Error> {
-    for i in 0..min(6, self.games.len()) {
-      self.draw_game_list_item(i)?
+    if self.games.len() == 0 {
+      self.draw_empty_game_list()
+    } else {
+      for i in 0..min(6, self.games.len()) {
+        self.draw_game_list_item(i)?
+      }
+      Ok(())
     }
-    Ok(())
   }
 
   fn draw_game_list_item (&self, index: usize) -> Result<(), Error> {
@@ -111,6 +115,22 @@ impl RomPickerState {
 
     graphics.set_draw_mode(LCDBitmapDrawMode::kDrawModeNXOR)?;
     graphics.draw_text(&self.games[game_index][..], point2(X_PADDING + 10, top + 6))?;
+
+    Ok(())
+  }
+
+  fn draw_empty_game_list (&self) -> Result<(), Error> {
+    let graphics = Graphics::get();
+
+    graphics.set_draw_mode(LCDBitmapDrawMode::kDrawModeCopy)?;
+    graphics.draw_text("No game ROMs found.
+
+Please copy some Gameboy games into
+Playboy's data folder.
+
+See:
+https://github.com/adamsoutar/playboy
+For more detailed steps :)", point2(20, 50))?;
 
     Ok(())
   }
