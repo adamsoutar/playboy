@@ -7,13 +7,26 @@ edition = "2018"
 
 [profile.dev]
 panic = "abort"
-opt-level = 'z'
+opt-level = 3
 lto = true
 
 [profile.release]
 panic = "abort"
-opt-level = 'z'
+opt-level = 3
 lto = true
+
+[profile.release.package.gbrs-core]
+opt-level = 3
+[profile.release.package.crankstart-sys]
+opt-level = 3
+[profile.release.package.anyhow]
+opt-level = 3
+[profile.release.package.euclid]
+opt-level = 3
+# TODO: Playboy crashes on start if crankstart is compiled as 
+#   *anything* but "z", even "s". Why is that?
+[profile.release.package.crankstart]
+opt-level = "z"
 
 [lib]
 crate-type = ["staticlib", "cdylib"]
