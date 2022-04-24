@@ -15,7 +15,7 @@ whatever you'd like to play. They usually come in `.gb` files (eg. `TETRIS.gb`) 
 <a href="./adding-roms-on-hardware.md">I've got a real Playdate</a>
 </td>
 <td>
-<a href="./adding-roms-on-hardware.md">I'm using the Simulator</a>
+<a href="./adding-roms-on-simulator.md">I'm using the Simulator</a>
 </td>
 </tr>
 </table>
