@@ -8,6 +8,7 @@ use crankstart::{
 };
 use crankstart_sys::{FileOptions, PDButtons, LCD_ROWS, LCDBitmapDrawMode};
 use euclid::{num::Floor, point2, rect};
+use gbrs_core::cpu::Cpu;
 
 const X_PADDING: i32 = 20;
 const Y_PADDING: i32 = 7;
@@ -23,7 +24,9 @@ pub struct RomPickerState {
 }
 
 impl RomPickerState {
-  pub fn update (&mut self, _playdate: &mut Playdate) -> Result<(), Error> {
+  // If the user picks a game, this update function returns a Vec<u8> which is a
+  // loaded game ROM buffer
+  pub fn update (&mut self, _playdate: &mut Playdate) -> Result<Option<Vec<u8>>, Error> {
     let system = System::get();
 
     let (_, btns_down, _) = system.get_button_state()?;
@@ -59,7 +62,26 @@ impl RomPickerState {
       }
     }
 
-    Ok(())
+    if (btns_down & PDButtons::kButtonA) == PDButtons::kButtonA {
+      // They want to select a game! 
+      // Let's read it off the file system and return it
+      let game_name = &self.games[self.selected];
+      let path = &format!("{}.gb", game_name)[..];
+      
+      let file_system = FileSystem::get();
+
+      let rom_stat = file_system.stat(path)?;
+      let mut rom_buffer = vec![0; rom_stat.size as usize];
+
+      let rom_file = file_system.open(
+        path, FileOptions::kFileRead | FileOptions::kFileReadData
+      )?;
+      rom_file.read(&mut rom_buffer)?;
+
+      return Ok(Some(rom_buffer))
+    }
+
+    Ok(None)
   }
 
   fn draw_whole_game_list (&self) -> Result<(), Error> {

@@ -148,12 +148,21 @@ fn process_crank_change(new_crank: f32, old_crank: f32) -> f32 {
 
 impl Game for State {
     fn update(&mut self, playdate: &mut Playdate) -> Result<(), Error> {
-        if let Some(rom_picker) = &mut self.rom_picker {
-            return rom_picker.update(playdate)
-        }
-
         let system = System::get();
         let graphics = Graphics::get();
+
+        if let Some(rom_picker) = &mut self.rom_picker {
+            let maybe_picked_game = rom_picker.update(playdate)?;
+
+            if let Some(picked_game) = maybe_picked_game {
+                let cpu = Cpu::from_rom_bytes(picked_game);
+                self.processor = Some(cpu);
+                self.rom_picker = None;
+                graphics.clear(LCDColor::Solid(LCDSolidColor::kColorBlack))?;
+            // Else they're still picking
+            } else { return Ok(()) }
+        }
+
         let gameboy = self.processor.as_mut().unwrap();
 
         let crank_change = system.get_crank_change()?;
