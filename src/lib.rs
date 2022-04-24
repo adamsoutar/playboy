@@ -15,6 +15,9 @@ use euclid::{num::Floor, point2};
 
 use gbrs_core::{callbacks::*, constants::*, cpu::Cpu, lcd::GreyShade};
 
+mod rom_picker;
+use rom_picker::RomPickerState;
+
 // On hardware, we'll target 15 FPS, which is more achievable, and still
 // playable.
 // On the simulator, we should have more than enough power to push 30 FPS.
@@ -32,7 +35,8 @@ struct State {
     processor: Option<Cpu>,
     // This is used to determine when the crank has changed direction
     // (we use that for Start/Select)
-    last_crank_change: f32
+    last_crank_change: f32,
+    rom_picker: Option<RomPickerState>
 }
 
 impl State {
@@ -87,41 +91,43 @@ impl State {
         // This allows the user to provide their own roms without copyright
         // issues.
         let file_system = FileSystem::get();
-        let rom_stat_result = file_system.stat("rom.gb");
-        if let Ok(rom_stat) = rom_stat_result {
-            let mut rom_buffer = vec![0; rom_stat.size as usize];
+        // let rom_stat_result = file_system.stat("rom.gb");
+        // if let Ok(rom_stat) = rom_stat_result {
+        //     let mut rom_buffer = vec![0; rom_stat.size as usize];
 
-            let rom_file = file_system
-                .open(
-                    "rom.gb",
-                    FileOptions::kFileRead | FileOptions::kFileReadData
-                ).unwrap();
-            rom_file.read(&mut rom_buffer).unwrap();
+        //     let rom_file = file_system
+        //         .open(
+        //             "rom.gb",
+        //             FileOptions::kFileRead | FileOptions::kFileReadData
+        //         ).unwrap();
+        //     rom_file.read(&mut rom_buffer).unwrap();
 
-            let mut cpu = Cpu::from_rom_bytes(rom_buffer);
-            cpu.frame_rate = FRAME_RATE;
+        //     let mut cpu = Cpu::from_rom_bytes(rom_buffer);
+        //     cpu.frame_rate = FRAME_RATE;
     
-            Ok(Box::new(Self {
-                processor: Some(cpu),
-                last_crank_change: 0.
-            }))
-        } else {
-            log_to_console!("Couldn't find rom.gb in Playboy's data folder, please provide one.");
+        //     Ok(Box::new(Self {
+        //         processor: Some(cpu),
+        //         last_crank_change: 0.,
+        //         rom_picker: None
+        //     }))
+        // } else {
+            log_to_console!("Couldn't find any roms in Playboy's data folder, please provide one.");
 
             // Let's write a handy little helper file to point new folk in the
             // right direction.
             let help_file = file_system
                 .open(
-                    "Game ROM goes here",
+                    "Game ROMs go here",
                     FileOptions::kFileWrite
                 ).unwrap();
             help_file.write(&[]).unwrap();
 
             Ok(Box::new(Self {
                 processor: None,
-                last_crank_change: 0.
+                last_crank_change: 0.,
+                rom_picker: Some(RomPickerState::new())
             }))
-        }
+        // }
     }
 }
 
@@ -142,8 +148,8 @@ fn process_crank_change(new_crank: f32, old_crank: f32) -> f32 {
 
 impl Game for State {
     fn update(&mut self, playdate: &mut Playdate) -> Result<(), Error> {
-        if self.processor.is_none() {
-            return self.no_rom_update(playdate)
+        if let Some(rom_picker) = &mut self.rom_picker {
+            return rom_picker.update(playdate)
         }
 
         let system = System::get();
