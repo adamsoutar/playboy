@@ -155,7 +155,8 @@ impl Game for State {
             let maybe_picked_game = rom_picker.update(playdate)?;
 
             if let Some(picked_game) = maybe_picked_game {
-                let cpu = Cpu::from_rom_bytes(picked_game);
+                let mut cpu = Cpu::from_rom_bytes(picked_game);
+                cpu.frame_rate = FRAME_RATE;
                 self.processor = Some(cpu);
                 self.rom_picker = None;
                 graphics.clear(LCDColor::Solid(LCDSolidColor::kColorBlack))?;
