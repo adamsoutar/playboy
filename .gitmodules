@@ -3,4 +3,4 @@
 	url = https://github.com/adamsoutar/gbrs
 [submodule "modules/crankstart"]
 	path = modules/crankstart
-	url = https://github.com/rtsuk/crankstart
+	url = https://github.com/adamsoutar/crankstart
