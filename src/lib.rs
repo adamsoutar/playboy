@@ -8,7 +8,7 @@ use crankstart::{
     crankstart_game, file::FileSystem,
     graphics::{Graphics, LCDColor, LCDSolidColor},
     system::System,
-    Game, Playdate
+    Game, Playdate, log_to_console
 };
 use crankstart_sys::{FileOptions, PDButtons, LCD_ROWS};
 use euclid::{num::Floor, point2};
@@ -42,7 +42,7 @@ impl State {
 
         unsafe {
             set_callbacks(Callbacks {
-                log: |log_str| System::log_to_console(log_str),
+                log: |log_str| log_to_console!("{}", log_str),
                 save: |game_name, _rom_path, save_data| {
                     let file_system = FileSystem::get();
                     let save_path = &format!("{}.sav", game_name)[..];
@@ -70,13 +70,13 @@ impl State {
                                 FileOptions::kFileRead | FileOptions::kFileReadData
                             ).unwrap();
                         save_file.read(&mut buffer).unwrap();
-                        System::log_to_console(&format!("Loaded {}", save_path)[..]);
+                        log_to_console!("Loaded {}", save_path);
                         buffer
                     } else {
                         // Error at that path, there probably just isn't a save
                         //   file yet. Return all 0s
                         // TODO: Should this be all 0 or all 0xFF?
-                        System::log_to_console(&format!("{} not found", save_path)[..]);
+                        log_to_console!("{} not found", save_path);
                         vec![0; expected_size]
                     }
                 }
@@ -106,7 +106,7 @@ impl State {
                 last_crank_change: 0.
             }))
         } else {
-            System::log_to_console("Couldn't find rom.gb in Playboy's data folder, please provide one.");
+            log_to_console!("Couldn't find rom.gb in Playboy's data folder, please provide one.");
 
             // Let's write a handy little helper file to point new folk in the
             // right direction.
