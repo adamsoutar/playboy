@@ -13,7 +13,7 @@ use crankstart::{
     Game, Playdate, log_to_console
 };
 use crankstart_sys::{FileOptions, PDButtons, LCD_ROWS};
-use euclid::{num::Floor, point2};
+use euclid::num::Floor;
 
 use gbrs_core::{callbacks::*, constants::*, cpu::Cpu, lcd::GreyShade};
 
