@@ -1,3 +1,4 @@
 max_width = 80
 trailing_comma = "Never"
 match_block_trailing_comma = true
+trailing_semicolon = false

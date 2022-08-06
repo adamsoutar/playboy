@@ -26,6 +26,8 @@ impl RomPickerState {
   // If the user picks a game, this update function returns a Vec<u8> which is a
   // loaded game ROM buffer
   pub fn update (&mut self, _playdate: &mut Playdate) -> Result<Option<Vec<u8>>, Error> {
+    if self.games.len() == 0 { return Ok(None) }
+    
     let system = System::get();
 
     let (_, btns_down, _) = system.get_button_state()?;
@@ -94,7 +96,7 @@ impl RomPickerState {
     }
   }
 
-  fn draw_game_list_item (&self, index: usize) -> Result<(), Error> {
+  fn draw_game_list_item (&self, index: usize) -> Result<(), Error> {    
     let graphics = Graphics::get();
 
     let scrn_index = index as i32;
