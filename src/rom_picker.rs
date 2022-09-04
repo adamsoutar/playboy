@@ -170,7 +170,9 @@ For more detailed steps :)",
         // Find files ending with '.gb' and push them into games
         let files = file_system.listfiles(".")?;
         for filename in files {
-            if filename.ends_with(".gb") {
+            // On FAT32 filesystems, macOS' Finder creates duplicates of every
+            // file with the prefix "._" to track things like journaling.
+            if filename.ends_with(".gb") && !filename.starts_with("._") {
                 let game = String::from(&filename[..filename.len() - 3]);
                 self.games.push(game);
             }
